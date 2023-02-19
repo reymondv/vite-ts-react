@@ -22,7 +22,6 @@ const Authentication = () => {
   const logout = async () => {
     await signOut(auth)
       .then((data) => {
-        console.log(data);
         setName(null);
         setPassword('');
         setEmail('');

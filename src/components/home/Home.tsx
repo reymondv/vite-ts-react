@@ -1,40 +1,96 @@
-import React, { useRef } from 'react';
-import { getMessages, getNextMessage } from '../../api/api';
-import { useCollection } from 'react-firebase-hooks/firestore';
+import React, { useEffect, useRef, useState } from 'react';
+import { getNextMessage } from '../../api/api';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import { AlwaysScrollToBottom } from '../util/Utility';
-const ChatRoom = () => {
-  const [value, loading, error] = useCollection(getMessages(), {
-    snapshotListenOptions: { includeMetadataChanges: true },
-  });
+import {
+  DocumentData,
+  FirestoreError,
+  collection,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+} from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
-  const getMoreMessages = async () => {
-    getNextMessage();
+const ChatRoom = () => {
+  const [data, setData] = useState<DocumentData>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<FirestoreError>();
+  const topMostRef = useRef<HTMLDivElement>(null);
+
+  const endMessageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const unsubscribe = async () => {
+      realTimeMessages();
+    };
+
+    unsubscribe();
+  }, []);
+
+  const realTimeMessages = async () => {
+    setLoading(true);
+    onSnapshot(
+      query(collection(db, 'messages'), orderBy('created_at', 'desc'), limit(25)),
+      (docs) => {
+        const data = new Array<DocumentData>();
+        docs.forEach((doc) => {
+          data.push(doc.data());
+        });
+        setLoading(false);
+        setData(data);
+      },
+      (error) => {
+        setError(error);
+        console.log(error);
+      },
+    );
   };
 
-  const endMessageRef = useRef<null | HTMLDivElement>(null);
+  const getMoreMessages = async () => {
+    getNextMessage().then((message) => {
+      setData([...(data as any[]), ...message]);
+    });
+
+    topMostRef?.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   if (loading) return <div>Loading...</div>;
 
   if (error) return <div>ERROR: {JSON.stringify(error)}</div>;
+
   return (
-    <main className='h-[92vh] flex flex-col'>
-      <div className='m-auto container'>
-        <h1>Chat Room</h1>
-      </div>
+    <main className='h-[100vh] flex flex-col pt-12'>
       <div className='container m-auto overflow-y-auto min-h-0'>
-        <div className='bg-neutral-200'>
-          <div>
-            <button onClick={getMoreMessages}>See more</button>
+        <div className='bg-slate-50 flex-col-reverse flex'>
+          {data?.map(
+            (
+              doc: {
+                message?: string | undefined;
+                uid?: string | undefined;
+                photoURL?: string | undefined;
+                displayName?: string | undefined;
+                created_at?:
+                  | { nanosecond: number | undefined; seconds: number | undefined }
+                  | undefined;
+              },
+              idx: React.Key | null | undefined,
+            ) => (
+              <React.Fragment key={idx}>
+                <ChatMessage data={doc} />
+              </React.Fragment>
+            ),
+          )}
+          <div className='container flex' ref={topMostRef}>
+            <button className='m-auto text-blue-500 p-3' onClick={getMoreMessages}>
+              See more
+            </button>
           </div>
-          {value?.docs.map((doc) => (
-            <React.Fragment key={doc.id}>
-              <ChatMessage data={doc.data()} />
-            </React.Fragment>
-          ))}
         </div>
-        <AlwaysScrollToBottom value={value} />
+        {/* <AlwaysScrollToBottom value={data} /> */}
+        <div ref={endMessageRef} />
       </div>
       <ChatInput divRef={endMessageRef} />
     </main>

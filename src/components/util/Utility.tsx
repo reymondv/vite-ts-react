@@ -2,7 +2,7 @@ import { DocumentData, QuerySnapshot } from 'firebase/firestore';
 import React, { useEffect, useRef } from 'react';
 
 interface Value {
-  value: QuerySnapshot<DocumentData> | undefined;
+  value: DocumentData | undefined;
 }
 export const AlwaysScrollToBottom = ({ value }: Value) => {
   const elementRef = useRef<HTMLDivElement>(null);

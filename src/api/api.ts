@@ -9,27 +9,30 @@ import {
   limit,
   getDocs,
   startAfter,
+  DocumentData,
 } from 'firebase/firestore';
 
-export function getMessages() {
-  const docRef = collection(db, 'messages');
-  return query(docRef, orderBy('created_at', 'desc'), limit(5));
-}
-
 export async function getNextMessage() {
-  const documentSnapshots = await getDocs(getMessages());
+  const data = new Array<DocumentData>();
+  const documentSnapshots = await getDocs(collection(db, 'messages'));
 
   const lastMessage = documentSnapshots.docs[documentSnapshots.docs.length - 1];
-  console.log();
 
-  const nextQuery = query(
-    collection(db, 'messages'),
-    orderBy('created_at', 'desc'),
-    startAfter(lastMessage),
-    limit(5),
+  const nextQuery = await getDocs(
+    query(
+      collection(db, 'messages'),
+      orderBy('created_at', 'desc'),
+      startAfter(lastMessage),
+      limit(25),
+    ),
   );
 
-  return nextQuery;
+  nextQuery.forEach((doc) => {
+    const message = doc.data();
+    data.push(message);
+  });
+
+  return data;
 }
 
 export async function addMessage(
