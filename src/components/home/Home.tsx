@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { getNextMessage } from '../../api/api';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
-import { AlwaysScrollToBottom } from '../util/Utility';
 import {
   DocumentData,
   FirestoreError,
+  QueryDocumentSnapshot,
   collection,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -18,6 +19,7 @@ const ChatRoom = () => {
   const [data, setData] = useState<DocumentData>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FirestoreError>();
+  const [startAfter, setStartAfter] = useState<QueryDocumentSnapshot<DocumentData>>();
   const topMostRef = useRef<HTMLDivElement>(null);
 
   const endMessageRef = useRef<HTMLDivElement>(null);
@@ -32,6 +34,10 @@ const ChatRoom = () => {
 
   const realTimeMessages = async () => {
     setLoading(true);
+    const documentSnapshots = await getDocs(
+      query(collection(db, 'messages'), orderBy('created_at', 'desc'), limit(25)),
+    );
+    setStartAfter(documentSnapshots.docs[documentSnapshots?.docs.length - 1]);
     onSnapshot(
       query(collection(db, 'messages'), orderBy('created_at', 'desc'), limit(25)),
       (docs) => {
@@ -50,9 +56,9 @@ const ChatRoom = () => {
   };
 
   const getMoreMessages = async () => {
-    getNextMessage().then((message) => {
-      setData([...(data as any[]), ...message]);
-    });
+    const { messages, lastMessage } = await getNextMessage(startAfter, 25);
+    setStartAfter(lastMessage);
+    setData([...(data as any[]), ...messages]);
 
     topMostRef?.current?.scrollIntoView({ behavior: 'smooth' });
   };
