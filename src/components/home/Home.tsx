@@ -68,7 +68,7 @@ const ChatRoom = () => {
   if (error) return <div>ERROR: {JSON.stringify(error)}</div>;
 
   return (
-    <main className='h-[100vh] flex flex-col pt-12'>
+    <main className='h-[100vh] flex flex-col pt-12 w-full'>
       <div className='container m-auto overflow-y-auto min-h-0'>
         <div className='bg-slate-50 flex-col-reverse flex'>
           {data?.map(

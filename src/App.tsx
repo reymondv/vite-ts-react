@@ -11,7 +11,7 @@ import { Login } from './components/authentication/GoogleAuthenticate';
 const App = () => {
   const [user] = useAuthState(auth);
   return (
-    <div className='App'>
+    <div className='App flex justify-center items-center'>
       <Header />
       {user ? <Home /> : <Login />}
     </div>

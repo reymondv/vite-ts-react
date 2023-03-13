@@ -1,7 +1,6 @@
 import React, { MutableRefObject, useRef, useState } from 'react';
 import { addMessage } from '../../api/api';
 import { auth } from '../../config/firebase';
-import { User } from 'firebase/auth';
 
 interface Ref {
   divRef: MutableRefObject<HTMLDivElement | null>;
@@ -26,7 +25,9 @@ const ChatInput = ({ divRef }: Ref) => {
 
   return (
     <div className='container flex m-auto self-end'>
-      <form onSubmit={sendMessage} className='flex w-full p-2 bg-white justify-evenly'>
+      <form
+        onSubmit={sendMessage}
+        className='flex w-full p-2 bg-white justify-evenly'>
         <div className='w-[80%]'>
           <input
             value={message}
@@ -39,8 +40,7 @@ const ChatInput = ({ divRef }: Ref) => {
         </div>
         <button
           className='rounded-full px-8 bg-amber-400 font-semibold text-white disabled:opacity-50 hover:enabled:bg-amber-500'
-          disabled={message == ''}
-        >
+          disabled={message == ''}>
           Send
         </button>
       </form>
